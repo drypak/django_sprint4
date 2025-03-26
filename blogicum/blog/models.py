@@ -1,11 +1,11 @@
-from django.contrib.auth import get_user_model
-from django.db import models
-from django.utils import timezone
-from django.contrib.auth.models import User
-from django.urls import reverse
-
-from blogicum.constants import MAX_LENGTH_NAME, MAX_TEXT_LENGTH, MAX_STR_LENGTH
 from blog.managers import PublishedManager
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import User
+from django.db import models
+from django.urls import reverse
+from django.utils import timezone
+
+from blogicum.constants import MAX_LENGTH_NAME, MAX_STR_LENGTH, MAX_TEXT_LENGTH
 
 User = get_user_model()
 
@@ -109,14 +109,9 @@ class Post(BaseModel):
         blank=True,
         null=True,
     )
+
     objects = models.Manager()
     published = PublishedManager()
-
-    is_published = models.BooleanField(default=True)
-
-    def get_absolute_url(self):
-        return reverse(
-            'blog:profile', kwargs={'username': self.author.username})
 
     class Meta(BaseModel.Meta):
         verbose_name = 'публикация'
@@ -125,6 +120,10 @@ class Post(BaseModel):
 
     def __str__(self):
         return f'{self.title[:MAX_STR_LENGTH]}'
+
+    def get_absolute_url(self):
+        return reverse(
+            'blog:profile', kwargs={'username': self.author.username})
 
 
 class Comment(models.Model):
@@ -140,7 +139,7 @@ class Comment(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='author',
+        related_name='comments',
     )
 
     class Meta:

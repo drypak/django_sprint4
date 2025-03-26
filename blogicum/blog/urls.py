@@ -1,4 +1,4 @@
-from . import views
+from blog import views
 from django.urls import path
 
 app_name = 'blog'
@@ -10,7 +10,7 @@ urlpatterns = [
         views.category_posts,
         name='category_posts',
     ),
-    path('profile/<username>/', views.profile_view, name='profile'),
+    path('profile/<str:username>/', views.profile_view, name='profile'),
     path(
         'profile/<username>/edit_profile/',
         views.ProfileUpdateView.as_view(),

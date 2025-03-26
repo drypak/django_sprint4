@@ -1,15 +1,9 @@
-from django.contrib import admin
-from django.urls import include, path
-from django.urls import reverse_lazy
-from django.views.generic.edit import CreateView
 from blog.forms import CustomUserCreationForm
+from django.contrib import admin
+from django.urls import include, path, reverse_lazy
+from django.views.generic.edit import CreateView
 
-
-urlpatterns = [
-
-    path('admin/', admin.site.urls),
-    path('', include('blog.urls', namespace='blog')),
-    path('pages/', include('pages.urls', namespace='pages')),
+auth_urlpatterns = [
     path('auth/', include('django.contrib.auth.urls')),
     path(
         'auth/registration/',
@@ -20,6 +14,13 @@ urlpatterns = [
         ),
         name='registration',
     ),
+]
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('blog.urls', namespace='blog')),
+    path('pages/', include('pages.urls', namespace='pages')),
+    *auth_urlpatterns,
 ]
 
 handler403 = 'pages.views.error_403'

@@ -1,6 +1,6 @@
+from blog.models import Comment, Post
 from django import forms
 from django.contrib.auth import get_user_model
-from blog.models import Post, Comment
 from django.contrib.auth.forms import UserCreationForm
 
 User = get_user_model()

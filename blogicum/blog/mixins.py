@@ -1,7 +1,8 @@
-from blog.forms import PostForm
-from blog.models import Post
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.shortcuts import redirect
+
+from blog.forms import PostForm
+from blog.models import Post
 
 
 class PostMixin:

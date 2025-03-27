@@ -1,5 +1,5 @@
-from blog import views
 from django.urls import path
+from blog import views
 
 app_name = 'blog'
 
@@ -12,7 +12,7 @@ urlpatterns = [
     ),
     path('profile/<str:username>/', views.profile_view, name='profile'),
     path(
-        'profile/<username>/edit_profile/',
+        'profile/<str:username>/edit_profile/',
         views.ProfileUpdateView.as_view(),
         name='edit_profile',
     ),

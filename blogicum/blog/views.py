@@ -1,9 +1,5 @@
-from blog.forms import CommentForm, PasswordChangeForm, ProfileForm
-from blog.mixins import AuthorRequiredMixin, PostMixin
-from blog.models import Category, Comment, Post
-from blog.utils import get_paginated_page
 from django.conf import settings
-from django.contrib.auth import get_user_model, update_session_auth_hash
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Q
@@ -12,6 +8,12 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import CreateView, DetailView, UpdateView
+
+from blog.forms import CommentForm, ProfileForm
+from blog.mixins import AuthorRequiredMixin, PostMixin
+from blog.models import Category, Comment, Post
+from blog.utils import get_paginated_page
+
 
 User = get_user_model()
 
@@ -22,26 +24,22 @@ def profile_view(request, username):
     user = get_object_or_404(User, username=username)
     current_time = timezone.now()
 
-    posts = user.posts.all()
-
-    if request.user.username != username:
-
-        posts = posts.filter(Q(is_published=True) & Q(
-            category__is_published=True) & Q(
-                pub_date__lte=current_time)
-        )
-
-    posts = posts.order_by('-pub_date')
-
-    posts = posts.annotate(comment_count=Count('comments'))
-
-    page_obj = get_paginated_page(request, posts, LIMIT_POSTS)
+    if request.user.is_authenticated:
+        posts = user.posts.filter(
+            Q(author=request.user) | Q(is_published=True) & Q(
+                category__is_published=True) & Q(
+                    pub_date__lte=current_time)
+        ).annotate(
+            comment_count=Count('comments')
+        ).order_by('-pub_date')
+    else:
+        posts = []
 
     return render(
         request,
         'blog/profile.html', {
             'profile': user,
-            'page_obj': page_obj
+            'page_obj': get_paginated_page(request, posts, LIMIT_POSTS)
         }
     )
 
@@ -60,23 +58,6 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
             kwargs={'username': self.request.user.username})
 
 
-@login_required
-def password_change_view(request, username):
-    user = request.user
-    form = PasswordChangeForm(user, request.POST)
-
-    if request.method == 'POST' and form.is_valid():
-        user = form.save()
-        update_session_auth_hash(request, user)
-        return redirect('blog:password_change_done')
-
-    return render(
-        request,
-        'blog/password_change.html',
-        {'form': form}
-    )
-
-
 class PostCreateView(LoginRequiredMixin, PostMixin, CreateView):
     pk_url_kwarg = 'post_id'
 
@@ -92,7 +73,8 @@ class PostCreateView(LoginRequiredMixin, PostMixin, CreateView):
 class PostUpdateView(
     LoginRequiredMixin,
     AuthorRequiredMixin,
-    PostMixin, UpdateView
+    PostMixin,
+    UpdateView
 ):
     pk_url_kwarg = 'post_id'
 
@@ -112,7 +94,8 @@ def delete_post(request, post_id):
         request,
         'blog/create.html', {
             'post': delete_post, 'is_delete': True
-        })
+        }
+    )
 
 
 class PostDetailView(DetailView):
@@ -122,18 +105,19 @@ class PostDetailView(DetailView):
     pk_url_kwarg = 'post_id'
 
     def get_object(self):
-        object = super().get_object()
+        post = super().get_object()
 
         if (
-            self.request.user != object.author
+            self.request.user != post.author
             and (
-                not object.is_published
-                or not object.category.is_published
-                or object.pub_date > timezone.now()
+                not post.is_published
+                or not post.category.is_published
+                or post.pub_date > timezone.now()
             )
         ):
-            raise Http404()
-        return object
+            raise Http404('Страница не найдена')
+
+        return post
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -147,10 +131,8 @@ def index(request):
         comment_count=Count('comments')
     ).order_by('-pub_date')
 
-    page_obj = get_paginated_page(request, posts, LIMIT_POSTS)
-
     return render(request, 'blog/index.html', {
-        'page_obj': page_obj
+        'page_obj': get_paginated_page(request, posts, LIMIT_POSTS)
     })
 
 
@@ -163,11 +145,9 @@ def category_posts(request, category_slug):
 
     post_list = category.posts(manager='published').all()
 
-    page_obj = get_paginated_page(request, post_list, LIMIT_POSTS)
-
     return render(request, 'blog/category.html', {
         'category': category,
-        'page_obj': page_obj
+        'page_obj': get_paginated_page(request, post_list, LIMIT_POSTS)
     })
 
 

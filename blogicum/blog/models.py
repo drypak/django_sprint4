@@ -1,11 +1,12 @@
-from blog.managers import PublishedManager
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 
+from blog.managers import PublishedManager
 from blogicum.constants import MAX_LENGTH_NAME, MAX_STR_LENGTH, MAX_TEXT_LENGTH
+
 
 User = get_user_model()
 

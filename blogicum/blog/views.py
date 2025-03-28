@@ -24,16 +24,14 @@ def profile_view(request, username):
     user = get_object_or_404(User, username=username)
     current_time = timezone.now()
 
-    if request.user.is_authenticated:
-        posts = user.posts.filter(
-            Q(author=request.user) | Q(is_published=True) & Q(
-                category__is_published=True) & Q(
-                    pub_date__lte=current_time)
-        ).annotate(
-            comment_count=Count('comments')
-        ).order_by('-pub_date')
-    else:
-        posts = []
+    posts = user.posts.filter(
+        Q(author__username=username) | Q(author=user) & Q(
+            is_published=True) & Q(
+            category__is_published=True) & Q(
+                pub_date__lte=current_time)
+    ).annotate(
+        comment_count=Count('comments')
+    ).order_by('-pub_date')
 
     return render(
         request,
@@ -176,7 +174,7 @@ def edit_comment(request, post_id, comment_id):
     comment = get_object_or_404(Comment, id=comment_id)
 
     if comment.author != request.user:
-        return HttpResponseForbidden()
+        raise Http404('Страница не найдена')
 
     form = CommentForm(request.POST or None, instance=comment)
 
